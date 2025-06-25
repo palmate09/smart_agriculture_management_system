@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String                 @id @default(uuid())
+  username                String              @unique
+  email                   String              @unique
+  name                    String?
+  password                String
+  farm_name               String?
+  created_At              DateTime
+  updated_At              DateTime
+    
+  fields                  Field[]
+  crops                   Crop[]
+  expenses                Expenses[]
+  revenue                 Revenues[]
+  activites               Activites[]
+  tasks                   Task[]
+}
+
+model Field {
+  id                     String                   @id @default(uuid())
+  userId                 String
+  user                   User                     @relation(fields: [userId], references: [id])
+  name                   String
+  area                   Float?
+  unit                   String?
+  location               String?
+  notes                  String?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+
+
+  crops                  Crop[]
+  activites              Activites[]
+  expenses               Expenses[]
+  tasks                  Task[]
+}
+
+
+model Crop {
+  id                      String                 @id @default(uuid())
+  userId                  String
+  user                    User                @relation(fields: [userId], references: [id])
+  name                    String
+  variety                 String?
+  plantingDate            DateTime            @db.Date
+  expectedHarvestingDate  DateTime?           @db.Date
+  actualHarvestingDate    DateTime?           @db.Date
+  status                  String              @default("Planned")//e.g., "Planned", "Growing", "Harvested", "Abandoned"
+  yieldAmount             Float?
+  yieldUnit               String?
+  notes                   String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  fieldId                 String?
+  field                   Field?              @relation(fields: [fieldId], references: [id])
+
+  activites               Activites[]
+  expenses                Expenses[]
+  revenue                 Revenues[]
+  grwothStages            CropGrowthStage[]
+  Task                    Task[]                
+}
+
+
+model  CropGrowthStage {
+  id                      String            @id @default(uuid())
+  cropId                  String
+  crop                    Crop              @relation(fields: [cropId], references: [id])
+  stageName               String            //e.g., "Germination", "Flowering", "Fruting"
+  dateObserved            DateTime          @db.Date
+  notes                   String?
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+}
+
+
+model Activites {
+  id                     String                 @id @default(uuid())
+  userId                 String
+  user                   User                   @relation(fields: [userId], references: [id])
+  Activity_type          String                 //e.g., "Sowing", "Fertilization", "Harvesting", "Irrigation", "Pest Control"  
+  date                   DateTime               @db.Date
+  description            String?
+  quantity               Float?
+  unit                   String?
+  notes                  String?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+
+  cropId                 String
+  crop                   Crop               @relation(fields: [cropId], references: [id])
+  fieldId                String?
+  field                  Field?             @relation(fields: [fieldId], references: [id])              
+}
+
+
+model Task {
+  id                     String             @id @default(uuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id])
+  title                  String
+  description            String?
+  dueDate                DateTime?          @db.Date
+  Status                 String             @default("Pending") //e.g., "Pending", "In Progress", "Completed", "Overdue"
+  priority               String?            //e.g., "High", "Medium", "Low"
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  cropId                 String?
+  crop                   Crop?              @relation(fields: [cropId], references: [id])
+  fieldId                String?
+  field                  Field?             @relation(fields: [fieldId], references: [id])
+}
+
+
+model Expenses {
+  id                     String             @id @default(uuid())
+  userId                 String
+  user                   User               @relation(fields: [userId], references: [id])
+  amount                 Float
+  currency               String
+  date                   DateTime           @db.Date
+  category               String             //e.g., "Seeds", "Fertilizers", "Labor", "Fuel"
+  description            String?
+  paymentMethod          String?            //e.g., "Cash", "Bank Transfer"
+  vendor                 String?
+  receiptNumber          String?
+  notes                  String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+
+  associatedCropId       String?
+  associatedCrop         Crop?              @relation(fields: [associatedCropId], references: [id])
+  associatedFieldId      String?
+  associatedField        Field?             @relation(fields: [associatedFieldId], references: [id])
+
+  details                ExpenseDetail?
+}
+
+
+enum ExpenseDetailType {
+  SEEDS
+  FERTILIZERS
+  PESTICIDES_HERBICIDES
+  LABOR
+  FUEL_ENERGY
+  MACHINERY_MAINTENANCE
+  UTILITIES
+  LAND_RENT_TAXES
+  INSURENCE
+  TRANSPORTATION_LOGISTICS
+  PACKAGEING_PROCESSING
+  OTHER_EXPENSE_DETAIL
+}
+
+
+model ExpenseDetail {
+  id               String         @id @default(uuid())
+  expenseId        String         @unique
+  expense          Expenses       @relation(fields: [expenseId], references: [id])
+  type             ExpenseDetailType
+  detailsJson      Json
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+
+model Revenues {
+  id                String          @id @default(uuid())
+  userId            String
+  user              User            @relation(fields: [userId], references: [id])
+  amount            Float
+  currency          String
+  date              DateTime        @db.Date
+  source            String          //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
+  description       String?
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  associatedCropId  String?
+  associatedCrop    Crop?           @relation(fields: [associatedCropId], references: [id])
+}
