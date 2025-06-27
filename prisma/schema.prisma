@@ -21,8 +21,8 @@ model User {
   name                    String?
   password                String
   farm_name               String?
-  created_At              DateTime
-  updated_At              DateTime
+  created_At              DateTime            @default(now())
+  updated_At              DateTime            @updatedAt
     
   fields                  Field[]
   crops                   Crop[]
@@ -30,7 +30,17 @@ model User {
   revenue                 Revenues[]
   activites               Activites[]
   tasks                   Task[]
+  resetPassword           PasswordResetToken[]
 }
+
+model PasswordResetToken {
+  id                      String              @id @default(uuid())
+  token                   String              @unique
+  userId                  String
+  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expireAt                DateTime            
+  createAt                DateTime            @default(now())
+} 
 
 model Field {
   id                     String                   @id @default(uuid())
@@ -199,4 +209,12 @@ model Revenues {
 
   associatedCropId  String?
   associatedCrop    Crop?           @relation(fields: [associatedCropId], references: [id])
+}
+
+
+model Admin {
+  id               String         @id @default(uuid())
+  username         String?        @unique
+  email            String         @unique
+  password         String         
 }
