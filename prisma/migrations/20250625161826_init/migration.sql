@@ -5,7 +5,7 @@ CREATE TABLE `User` (
     `email` VARCHAR(191) NOT NULL,
     `name` VARCHAR(191) NULL,
     `password` VARCHAR(191) NOT NULL,
-    `farm_name` VARCHAR(191) NULL,
+    `farm_names` VARCHAR(191) NULL,
     `created_At` DATETIME(3) NOT NULL,
     `updated_At` DATETIME(3) NOT NULL,
 

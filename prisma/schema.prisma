@@ -20,7 +20,7 @@ model User {
   email                   String              @unique
   name                    String?
   password                String
-  farm_name               String?
+  farm_names              String?
   created_At              DateTime            @default(now())
   updated_At              DateTime            @updatedAt
     
@@ -50,7 +50,7 @@ model Field {
   area                   Float?
   unit                   String?
   location               String?
-  notes                  String?
+  notes                  Notes[]
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
 
@@ -61,9 +61,28 @@ model Field {
   tasks                  Task[]
 }
 
+model Notes {
+  id                    Int                   @id @default(autoincrement())
+  description           String?
+  fieldId               String?
+  field                 Field?                 @relation(fields: [fieldId], references: [id])
+  cropId                String?               
+  crop                  Crop?                   @relation(fields: [cropId], references: [id])
+  crpgwthId             String?
+  cropGrowthstage       CropGrowthStage?        @relation(fields: [crpgwthId], references: [id])
+  activitesId           String?
+  activites             Activites?              @relation(fields: [activitesId], references: [id])
+  ExpenseId             String?
+  Expenses              Expenses?               @relation(fields: [ExpenseId], references: [id])
+  RevenueId             String?
+  Revenues              Revenues?               @relation(fields: [RevenueId], references: [id])
+  createdAt             DateTime              @default(now())
+  updateAt              DateTime              @updatedAt
+}
+
 
 model Crop {
-  id                      String                 @id @default(uuid())
+  id                      String              @id @default(uuid())
   userId                  String
   user                    User                @relation(fields: [userId], references: [id])
   name                    String
@@ -74,7 +93,7 @@ model Crop {
   status                  String              @default("Planned")//e.g., "Planned", "Growing", "Harvested", "Abandoned"
   yieldAmount             Float?
   yieldUnit               String?
-  notes                   String?
+  notes                   Notes[]
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
 
@@ -91,11 +110,11 @@ model Crop {
 
 model  CropGrowthStage {
   id                      String            @id @default(uuid())
-  cropId                  String
+  cropId                  String            @unique
   crop                    Crop              @relation(fields: [cropId], references: [id])
   stageName               String            //e.g., "Germination", "Flowering", "Fruting"
   dateObserved            DateTime          @db.Date
-  notes                   String?
+  notes                   Notes[]
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
 }
@@ -106,11 +125,11 @@ model Activites {
   userId                 String
   user                   User                   @relation(fields: [userId], references: [id])
   Activity_type          String                 //e.g., "Sowing", "Fertilization", "Harvesting", "Irrigation", "Pest Control"  
-  date                   DateTime               @db.Date
+  startDate              DateTime               @db.Date
   description            String?
   quantity               Float?
   unit                   String?
-  notes                  String?
+  notes                  Notes[]
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 
@@ -153,7 +172,7 @@ model Expenses {
   paymentMethod          String?            //e.g., "Cash", "Bank Transfer"
   vendor                 String?
   receiptNumber          String?
-  notes                  String?
+  notes                  Notes[]
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -203,7 +222,7 @@ model Revenues {
   date              DateTime        @db.Date
   source            String          //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
   description       String?
-  notes             String?
+  notes             Notes[]
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 

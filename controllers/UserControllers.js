@@ -4,15 +4,14 @@ import jwt from 'jsonwebtoken'
 import validator from 'validator'
 import transporter from '../config/nodemailer.js'
 import { randomBytes } from 'node:crypto'
-import { response } from 'express'
 
 export const signup = async(req, res) => {
     
     try{
 
-        const { username, email, name, password, farm_name} = req.body;
+        const { username, email, name, password, farm_names} = req.body;
         
-        if(!username || !email || !name || !password || !farm_name){
+        if(!username || !email || !name || !password || !farm_names){
             res.status(404).json({message: 'fill the given data first'})
             return; 
         }
@@ -55,7 +54,7 @@ export const signup = async(req, res) => {
                 username: HashedUsername,
                 email, 
                 password: HashedPassword, 
-                farm_name, 
+                farm_names, 
                 name
             }
         })
@@ -136,7 +135,7 @@ export const updateProfile = async(req, res) => {
     
     try{
 
-        const { email, username, name, farm_name } = req.body; 
+        const { email, username, name, farm_names } = req.body; 
         
         if(!email){
             res.status(404).json({message: 'please fill the email first'})
@@ -168,7 +167,7 @@ export const updateProfile = async(req, res) => {
             data: {
                 username: HashedUsername, 
                 name, 
-                farm_name
+                farm_names
             }
         })
         res.status(200).json({response: updatedUser, message: 'user found'}); 

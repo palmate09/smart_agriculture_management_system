@@ -4,6 +4,7 @@ import { expect } from 'chai'
 import { describe } from 'mocha'
 import client from '../config/database.js'
 import jwt from 'jsonwebtoken'
+import { randomBytes } from 'crypto'
 
 describe.skip('Auth Routes', () => {
 
@@ -12,7 +13,7 @@ describe.skip('Auth Routes', () => {
         password: '@Aashutosh09', 
         name: 'Aashutosh Barhate', 
         email: "palmateshubham9@gmail.com", 
-        farm_name: 'the farm'
+        farm_names: 'the farm'
     }
 
     it('should signup the user ', async() => {
@@ -29,7 +30,7 @@ describe.skip('Auth Routes', () => {
             password: '@Aashutosh09', 
             name: 'Aashutosh Barhate', 
             email: "palmateshubham9@gmail.com", 
-            farm_name: 'the farm'
+            farm_names: 'the farm'
         })
 
 
@@ -38,7 +39,7 @@ describe.skip('Auth Routes', () => {
             password: '@Aashutosh09', 
             name: 'Aashutosh Barhate', 
             email: "palmateshubham9@gmail.com", 
-            farm_name: 'the farm'
+            farm_names: 'the farm'
         })
 
         expect(res.status).to.equal(400)
@@ -85,7 +86,7 @@ describe.skip('Auth Routes', () => {
             email: 'palmateshubham9@gmail.com', 
             username: 'aasutosh09', 
             name: 'Aashutosh Barhate', 
-            farm_name: 'the farm'
+            farm_names: 'the farm'
         })
 
         expect(res.status).to.equal(200)
@@ -106,7 +107,7 @@ describe.skip('Auth Routes', () => {
         const token1 = jwt.sign({email: 'palmateshubham9@gmail.com'}, 'shubham09')
 
         const res = await request(app).post('/api/users/forgot-password/token').set('Authorization', `Bearer ${token1}`).send({
-            token: '3bfc294ce29c9d669215f4c7fdc8bcd4ca2e77c894de227b76ef0fd09fc5de5a',
+            token: randomBytes(32).toString('hex'),
             password: 'shubham09@'
         })
 
