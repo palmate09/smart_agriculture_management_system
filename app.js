@@ -10,4 +10,6 @@ app.use(express.json());
 
 app.use('/api', userRouter); 
 
-export default app; 
+app.listen(process.env.PORT || 8080)
+
+// export default app; 
