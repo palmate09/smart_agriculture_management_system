@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken'
 import validator from 'validator'
 import transporter from '../config/nodemailer.js'
 import { randomBytes } from 'node:crypto'
+import { response } from 'express'
 
 export const signup = async(req, res) => {
     
@@ -28,7 +29,7 @@ export const signup = async(req, res) => {
             return 
         }
 
-        const passwordRgx = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/
+        const passwordRgx = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{6,}$/
         if(!validator.isLength(password, {min: 6}) && !passwordRgx.test(password)){
             res.status(404).json({message: 'fill the password with 1letter upercase and lowercase and one digit required'})
             return
@@ -40,8 +41,9 @@ export const signup = async(req, res) => {
             }
         })
 
+
         if(user){
-            res.send(404).json({message: 'User already exist please do login'})
+            res.status(400).json({message: 'User already exist please do login'})
             return 
         }
 
@@ -58,7 +60,8 @@ export const signup = async(req, res) => {
             }
         })
 
-        return res.json(`UserId:- ${userData.id}`); 
+
+        return res.status(201).json({userId: userData.id, message: 'Signed up successfully'}); 
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -72,28 +75,33 @@ export const login = async(req, res) => {
 
         const { email, username, password } = req.body;
         
+        if (!password || (!email && !username)) {
+            return res.status(400).json({ message: 'Email or username and password are required' });
+        }
+        
         const user = await client.user.findFirst({
-            where: {
-                email
-            }, 
+            where: email ? { email }: { username }, 
             select: {
                 id: true, 
                 password: true,
                 username: true,
-                email: email
+                email: true
             }
         })
 
-        const Password = bcrypt.compare(password, user.password)
-        const Username = bcrypt.compare(username, user.username)
+        if (!user) {
+            return res.status(400).json({ message: 'User not found and authentication failed' });
+        }
 
-        if(!Password && !Username){
-            res.status(404).json({message: 'User not found and authentication failed'})
+        const Password = bcrypt.compare(password, user.password)
+
+        if(!Password){
+            res.status(400).json({message: 'User not found and authentication failed'})
             return 
         }
 
         const token = jwt.sign({email: user.email}, process.env.JWT_SECRECT);
-        return res.status(200).json(`Token:- ${token}`);
+        return res.status(200).json({token, message: 'user successfully logged in'});
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -107,17 +115,17 @@ export const getprofile = async(req, res) => {
 
         const userId = req.user.id;  
 
-        const user = await client.user.findUnique({
+        const user = await client.user.findFirst({
             where: {
                 id: userId
             }
         })
 
         if(!user){
-            res.status(404).json({message: 'User not found'})
+            res.status(401).json({message: 'User not found'})
         }
 
-        res.status(200).json(user); 
+        res.status(200).json({user, message: 'user found'}); 
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -129,6 +137,10 @@ export const updateProfile = async(req, res) => {
     try{
 
         const { email, username, name, farm_name } = req.body; 
+        
+        if(!email){
+            res.status(404).json({message: 'please fill the email first'})
+        }
 
         const user = await client.user.findFirst({
             where: {
@@ -136,12 +148,9 @@ export const updateProfile = async(req, res) => {
             }
         })
 
+
         if(!user){
             res.status(404).json({message: 'user not found '})
-        }
-
-        if(!email){
-            res.status(404).json({message: 'please fill the email first'})
         }
 
         const usernameRgx = /^[a-zA-Z0-9_]{3,20}$/
@@ -162,7 +171,7 @@ export const updateProfile = async(req, res) => {
                 farm_name
             }
         })
-        res.json(updatedUser); 
+        res.status(200).json({response: updatedUser, message: 'user found'}); 
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -202,7 +211,7 @@ export const forgotpassrequest = async(req, res) => {
 
         const expiry = new Date(Date.now() + 3600000) // expires the token after one hour
 
-        await client.passwordResetToken.create({
+        const tokenCreate = await client.passwordResetToken.create({
             data: {
                 token: token, 
                 userId: user.id,
@@ -210,20 +219,20 @@ export const forgotpassrequest = async(req, res) => {
             }
         })
 
-        const resetUrl = `http://localhost:${process.env.PORT}/api/users/forgot-password?token=${token}`
+        // const resetUrl = `http://localhost:${process.env.PORT}/api/users/forgot-password?token=${token}`
 
         const info = await transporter.sendMail({
             from: process.env.USER_EMAIL, 
             to: user.email, 
             subject: 'Password Reset Request',
-            text: `this is the token for the reset password :- ${resetUrl}` 
+            text: `this is the token for the reset password :- ${tokenCreate.token}` 
         })
 
         if(!info){
             res.status(404).json({message: 'information Error'})
         }
 
-        res.json(info.response)
+        res.json(tokenCreate.token)
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -232,9 +241,8 @@ export const forgotpassrequest = async(req, res) => {
 
 export const forgotpassword = async(req, res) => {
     try{
-
-        const { token }  = req.params; 
-        const { password } = req.body; 
+ 
+        const { token,  password } = req.body; 
 
         const passwordRgx = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/
         if(!validator.isLength(password, {min: 6}) && !passwordRgx.test(password)){
