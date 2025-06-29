@@ -9,6 +9,6 @@ export const CategoryExpense = async(req, res) => {
 
 }
 
-export const revenue_by_soruce = async(req, res) => {
+export const revenue_by_source = async(req, res) => {
     
 }

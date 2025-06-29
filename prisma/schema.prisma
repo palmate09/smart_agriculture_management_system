@@ -221,7 +221,7 @@ model Revenues {
   amount            Float
   currency          String
   date              DateTime        @db.Date
-  source            String          //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
+  source            SourceRevenue          //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
   description       String?
   notes             Notes[]
   createdAt         DateTime        @default(now())
@@ -231,6 +231,12 @@ model Revenues {
   Crop              Crop?           @relation(fields: [cropId], references: [id])
   fieldId           String?
   Field             Field?          @relation(fields: [fieldId], references: [id])
+}
+
+enum SourceRevenue {
+  CROP_SALE
+  SUBSIDY
+  LIVESTOCK_SALE
 }
 
 
