@@ -1,8 +1,7 @@
-import { connect } from 'http2';
 import client from '../config/database.js'
 import jwt from 'jsonwebtoken'
 
-
+//create a new activity associated with the crop which associated with the field and which associated to the user/farmer
 export const newActivity = async(req, res) => {
 
     try{
@@ -109,6 +108,7 @@ export const newActivity = async(req, res) => {
     }
 }
 
+//get all activites associated to the particular crop which associated to the particular field and which associated to the particular user/farmer
 export const GetAllActivites = async(req, res) => {
 
     try{
@@ -178,6 +178,7 @@ export const GetAllActivites = async(req, res) => {
     }
 }
 
+//get particular activity associated to the particular crop which associated to the particular field and which associated to the particular user/farmer
 export const GetPariticularActivity = async(req, res) => {
 
     try{
@@ -265,6 +266,7 @@ export const GetPariticularActivity = async(req, res) => {
     }
 }
 
+//update particular activity associated to the particular crop which associated to the particular field and which associated to the particular user/farmer
 export const UpdateActivity = async(req, res) => {
 
     try{
@@ -381,6 +383,7 @@ export const UpdateActivity = async(req, res) => {
     }
 }
 
+// delete particular ativity associated to the particular crop which associated to the particular field and which associated to the particular user/farmer
 export const deleteActivity = async(req, res) => {
     
     try{
@@ -466,6 +469,40 @@ export const deleteActivity = async(req, res) => {
         }
 
         res.status(200).json({deleteParticularActivity, message: 'particular acitivity has been successfully deleted'})
+    }
+    catch(e){
+        res.status(500).json({error: e.message, message: 'Internal server Error'})
+    }
+}
+
+// get all the logged activites associated to the particular user 
+export const getAllLoggedActivites = async(req, res) => {
+    
+    try{
+
+        const userId = req.user.id; 
+
+        if(!userId){
+            res.status(400).json({message: 'user id required to fill first '})
+        }
+
+        const user = await client.user.findFirst({
+            where: {
+                id: userId
+            }
+        })
+
+        if(!user){
+            res.status(400).json({message: 'user not found, invalid userId'})
+        }
+
+        const allloggedActivites = await client.activites.findUnique({
+            where: {
+                userId: user.id
+            }
+        })
+
+        res.status(200).json({allloggedActivites, message: 'all logged activites has been received successfully'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})

@@ -56,6 +56,7 @@ model Field {
 
 
   crops                  Crop[]
+  revenues               Revenues[]
   activites              Activites[]
   expenses               Expenses[]
   tasks                  Task[]
@@ -148,7 +149,7 @@ model Task {
   title                  String
   description            String?
   dueDate                DateTime?          @db.Date
-  Status                 String             @default("Pending") //e.g., "Pending", "In Progress", "Completed", "Overdue"
+  status                 String             @default("Pending") //e.g., "Pending", "In Progress", "Completed", "Overdue"
   priority               String?            //e.g., "High", "Medium", "Low"
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
@@ -167,7 +168,7 @@ model Expenses {
   amount                 Float
   currency               String
   date                   DateTime           @db.Date
-  category               String             //e.g., "Seeds", "Fertilizers", "Labor", "Fuel"
+  category               ExpenseDetailType             //e.g., "Seeds", "Fertilizers", "Labor", "Fuel"
   description            String?
   paymentMethod          String?            //e.g., "Cash", "Bank Transfer"
   vendor                 String?
@@ -177,10 +178,10 @@ model Expenses {
   updatedAt              DateTime           @updatedAt
 
 
-  associatedCropId       String?
-  associatedCrop         Crop?              @relation(fields: [associatedCropId], references: [id])
-  associatedFieldId      String?
-  associatedField        Field?             @relation(fields: [associatedFieldId], references: [id])
+  cropId                 String?
+  Crop                   Crop?              @relation(fields: [cropId], references: [id])
+  fieldId                String?
+  Field                  Field?             @relation(fields: [fieldId], references: [id])
 
   details                ExpenseDetail?
 }
@@ -226,8 +227,10 @@ model Revenues {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
-  associatedCropId  String?
-  associatedCrop    Crop?           @relation(fields: [associatedCropId], references: [id])
+  cropId            String?
+  Crop              Crop?           @relation(fields: [cropId], references: [id])
+  fieldId           String?
+  Field             Field?          @relation(fields: [fieldId], references: [id])
 }
 
 
