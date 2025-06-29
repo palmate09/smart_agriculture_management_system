@@ -381,14 +381,14 @@ export const UpdateActivity = async(req, res) => {
     }
 }
 
-export const delteActivity = async(req, res) => {
+export const deleteActivity = async(req, res) => {
     
     try{
 
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const activityId = req.activity.id; 
+        const activityId = req.params; 
 
         if(!userId || !fieldId || !cropId || !activityId){
             res.status(400).json({message: 'userId and fieldId and cropId is required'})
