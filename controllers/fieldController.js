@@ -34,6 +34,21 @@ export const createField = async(req, res) => {
             res.status(400).json({message: 'fill the required fields first'})
         }
 
+        const fieldExist = await client.field.findFirst({
+            where: {
+                userId: user.id
+            }, 
+            select: {
+                name: true
+            }
+        })
+        const fieldExistLowercase  = fieldExist.name.toLowerCase();
+        const nameLowercase        = name.toLowerCase()
+
+        if(fieldExistLowercase === nameLowercase && fieldExistLowercase.length === nameLowercase.length){
+            res.status(400).json({message: 'field already exist'})
+        }
+
         const notesData = Array.isArray(notes)
             ? notes.map((note) => {
                 if(note?.description){
