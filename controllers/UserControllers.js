@@ -9,9 +9,9 @@ export const signup = async(req, res) => {
     
     try{
 
-        const { username, email, name, password, farm_names} = req.body;
+        const { username, email, name, password} = req.body;
         
-        if(!username || !email || !name || !password || !farm_names){
+        if(!username || !email || !name || !password){
             res.status(404).json({message: 'fill the given data first'})
             return; 
         }
@@ -34,27 +34,13 @@ export const signup = async(req, res) => {
             return
         }
 
-        const user = await client.user.findUnique({
-            where: {
-                email
-            }
-        })
-
-
-        if(user){
-            res.status(400).json({message: 'User already exist please do login'})
-            return 
-        }
-
-        const HashedPassword = await bcrypt.hash(password, 10); 
-        const HashedUsername = await bcrypt.hash(username, 8); 
+        const HashedPassword = await bcrypt.hash(password, 10);  
 
         const userData = await client.user.create({
             data: {
-                username: HashedUsername,
+                username,
                 email, 
-                password: HashedPassword, 
-                farm_names, 
+                password: HashedPassword,  
                 name
             }
         })
@@ -72,19 +58,24 @@ export const login = async(req, res) => {
 
     try{
 
-        const { email, username, password } = req.body;
+        const { identifier,  password } = req.body;
         
-        if (!password || (!email && !username)) {
+        if (!password || !identifier) {
             return res.status(400).json({ message: 'Email or username and password are required' });
         }
         
         const user = await client.user.findFirst({
-            where: email ? { email }: { username }, 
+            where:{
+                OR: [
+                    {email: identifier}, 
+                    {username: identifier}
+                ]
+            },
             select: {
                 id: true, 
-                password: true,
-                username: true,
-                email: true
+                email: true, 
+                password: true, 
+                username: true
             }
         })
 
@@ -99,7 +90,7 @@ export const login = async(req, res) => {
             return 
         }
 
-        const token = jwt.sign({id: user.id}, process.env.JWT_SECRECT);
+        const token = jwt.sign({id: user.id, email: user.email}, process.env.JWT_SECRECT);
         return res.status(200).json({token, message: 'user successfully logged in'});
     }
     catch(e){
@@ -135,10 +126,10 @@ export const updateProfile = async(req, res) => {
     
     try{
 
-        const { email, username, name, farm_names } = req.body; 
+        const { email, username, name } = req.body; 
         
         if(!email){
-            res.status(404).json({message: 'please fill the email first'})
+            res.status(404).json({message: 'please fill the required data first'})
         }
 
         const user = await client.user.findFirst({
@@ -157,20 +148,17 @@ export const updateProfile = async(req, res) => {
             res.status(404).json({message: 'fill the username correctly'})
             return 
         }
-
-        const HashedUsername = await bcrypt.hash(username, 8); 
-
+ 
         const updatedUser = await client.user.update({
             where: {
                 email
             }, 
-            data: {
-                username: HashedUsername, 
-                name, 
-                farm_names
+            data: { 
+                username, 
+                name
             }
         })
-        res.status(200).json({response: updatedUser, message: 'user found'}); 
+        res.status(200).json({response: updatedUser, message: 'user updated successfully'}); 
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -240,8 +228,9 @@ export const forgotpassrequest = async(req, res) => {
 
 export const forgotpassword = async(req, res) => {
     try{
- 
-        const { token,  password } = req.body; 
+        
+        const {token} = req.params; 
+        const { password } = req.body; 
 
         const passwordRgx = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/
         if(!validator.isLength(password, {min: 6}) && !passwordRgx.test(password)){

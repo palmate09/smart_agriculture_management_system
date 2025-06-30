@@ -4,7 +4,7 @@ export const authCrop = async(req, res, next) => {
 
     try{
 
-        const cropToken = req.headers['crop-token']?.authHeader.split(' ')[1]; 
+        const cropToken = req.headers['crop-token']?.split(' ')[1]; 
 
 
         if(cropToken === null){

@@ -1,5 +1,6 @@
 import client from '../config/database.js'
 import jwt from 'jsonwebtoken'
+import { Cropstatus } from '../generated/prisma/index.js';
 
 // create the new crop detail by the particular user 
 export const new_crop = async(req, res) => {
@@ -16,6 +17,9 @@ export const new_crop = async(req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select:{
+                id: true
             }
         })
 
@@ -25,7 +29,11 @@ export const new_crop = async(req, res) => {
 
         const field = await client.field.findFirst({
             where: {
+                userId: user.id, 
                 id: fieldId
+            }, 
+            select: {
+                id: true            
             }
         })
         
@@ -40,17 +48,22 @@ export const new_crop = async(req, res) => {
             return; 
         }
 
+
+        if(!Object.values(Cropstatus).includes(status)){
+            res.status(400).json({message: 'Invalid crop status provided'})
+        }
+
         const Notes = Array.isArray(notes)
             ? notes.map((note) => {
                 if(note?.description){
-                    description: note?.description
+                    description: note.description
                 }
             }): []
         
-        const date = new Date(); 
+        
+        const Plantingdate = new Date(plantingDate);  
+        const expected_harvestingDate = new Date(expectedHarvestingDate)
 
-        const Plantingdate = date.setDate(date.getDate()); 
-        const expected_harvestingDate = date.setDate(date.getDate() + 100);
 
         const newCrop = await client.crop.create({
             data: {
@@ -58,10 +71,12 @@ export const new_crop = async(req, res) => {
                 variety, 
                 plantingDate: Plantingdate, 
                 expectedHarvestingDate: expected_harvestingDate, 
-                status,
+                status: status,
                 yieldAmount, 
                 yieldUnit,
-                notes: Notes,
+                notes: {
+                    create: Notes
+                },
                 user: {
                     connect: {
                         id: user.id
@@ -75,8 +90,18 @@ export const new_crop = async(req, res) => {
             }
         })
 
+        if(!newCrop){
+            res.status(400).json({message: 'the new Crop details have not been generated yet'})
+        }
+
         const token = jwt.sign({id: newCrop.id}, process.env.JWT_SECRECT); 
+
+        if(!token){
+            res.status(400).json({message: 'token has not been generated yet'})
+        }
+
         res.status(201).json({token, message: 'Crop details successfully has been stored'})
+
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -98,6 +123,9 @@ export const get_allCrops_ofParticularFramer = async (req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            },
+            select: {
+                id: true
             }
         })
 
@@ -109,6 +137,9 @@ export const get_allCrops_ofParticularFramer = async (req, res) => {
             where: {
                 userId: user.id,
                 id: fieldId
+            },
+            select: {
+                id: true
             }
         })
 
@@ -116,14 +147,14 @@ export const get_allCrops_ofParticularFramer = async (req, res) => {
             res.status(400).json({message: 'field not found so fill the correct fieldid'})
         }
 
-        const CropDetails = await client.crop.findUnique({
+        const CropDetails = await client.crop.findMany({
             where: {
                 userId: user.id, 
                 fieldId: field.id
             }
         })
 
-        res.status(200).json({CropDetails, message: 'Crop details found'})
+        res.status(200).json({ CropDetails, message: 'Crop details found'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -237,7 +268,7 @@ export const updateCropAfterHarvesting = async(req, res) => {
             res.status(400).json({message: 'crop not found, invalid cropId'})
         }
 
-        const {  actualHarvestingDate, status , notes} = req.body; 
+        const { actualHarvestingDate, status , notes} = req.body; 
 
         if(  !actualHarvestingDate || !status  ){
             res.status(400).json({message: 'fill the required data first '})
@@ -250,9 +281,8 @@ export const updateCropAfterHarvesting = async(req, res) => {
                 }
             }): []
         
-        const date = new Date();
         
-        const Acutal_harvestingDate  = date.setDate(date.getDate()); 
+        const Acutal_harvestingDate  = new Date(actualHarvestingDate); 
 
 
         const cropDetails = await client.crop.update({
@@ -264,9 +294,13 @@ export const updateCropAfterHarvesting = async(req, res) => {
             data: {
                 actualHarvestingDate: Acutal_harvestingDate, 
                 status, 
-                notes: Notes
+                notes: {
+                    create: Notes
+                }
             }
         })
+
+        res.status(200).json({ cropDetails, message: 'crop details have been successfully updated'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -280,7 +314,7 @@ export const DeleteCrop = async(req, res) => {
 
         const userId = req.user.id
         const fieldId = req.field.id
-        const cropId = req.crop.id;
+        const { cropId } = req.params;
         
         if(!userId && !fieldId && !cropId){
             res.status(400).json({message: 'userId and fieldId and cropId is requried '})
@@ -327,7 +361,7 @@ export const DeleteCrop = async(req, res) => {
             }
         })
 
-        res.status(200).json({cropDetails, message: 'crop details has been successfully deleted'})
+        res.status(201).json({cropDetails, message: 'crop details has been successfully deleted'})
         
     }
     catch(e){
@@ -381,11 +415,10 @@ export const CropGrowthStage = async(req, res) => {
             res.status(400).json({message: 'crop data not found, invalid cropId'})
         }
 
-        const { stageName, notes } = req.body; 
+        const { stageName, notes, dateObserved } = req.body; 
 
-        const date = new Date(); 
 
-        const DateObserved = date.setDate(date.getDate())
+        const DateObserved =new Date(dateObserved);
 
         const Notes = Array.isArray(notes)
             ? notes.map((note) => {
@@ -398,7 +431,9 @@ export const CropGrowthStage = async(req, res) => {
             data: {
                 stageName, 
                 dateObserved: DateObserved, 
-                notes: Notes, 
+                notes:{
+                    create: Notes
+                }, 
                 crop: {
                     connect: {
                         id: crop.id
@@ -521,7 +556,7 @@ export const updateGrowthStage = async(req, res) => {
         }
 
         const { crpgwthId } = req.params; 
-        const { stageName, notes } = req.body; 
+        const { stageName, notes, dateObserved } = req.body; 
 
         const Notes = Array.isArray(notes)
             ? notes.map((note) => {
@@ -530,6 +565,8 @@ export const updateGrowthStage = async(req, res) => {
                 }
             }) : []
 
+        const DateObserved = new Date(dateObserved)
+
         const updateCropGrowthStage = await client.cropGrowthStage.update({
             where: {
                 cropId: crop.id,  
@@ -537,7 +574,10 @@ export const updateGrowthStage = async(req, res) => {
             }, 
             data: {
                 stageName, 
-                notes: Notes, 
+                notes: {
+                    create: Notes
+                }, 
+                dateObserved: DateObserved, 
                 crop: {
                     connect: {
                         id: crop.id

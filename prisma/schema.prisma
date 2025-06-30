@@ -15,12 +15,11 @@ datasource db {
 }
 
 model User {
-  id                      String                 @id @default(uuid())
+  id                      String              @id @default(uuid())
   username                String              @unique
   email                   String              @unique
   name                    String?
   password                String
-  farm_names              String?
   created_At              DateTime            @default(now())
   updated_At              DateTime            @updatedAt
     
@@ -46,7 +45,7 @@ model Field {
   id                     String                   @id @default(uuid())
   userId                 String
   user                   User                     @relation(fields: [userId], references: [id])
-  name                   String
+  name                   String                   @unique
   area                   Float?
   unit                   String?
   location               String?
@@ -86,12 +85,12 @@ model Crop {
   id                      String              @id @default(uuid())
   userId                  String
   user                    User                @relation(fields: [userId], references: [id])
-  name                    String
+  name                    String              @unique
   variety                 String?
   plantingDate            DateTime            @db.Date
   expectedHarvestingDate  DateTime?           @db.Date
   actualHarvestingDate    DateTime?           @db.Date
-  status                  String              @default("Planned")//e.g., "Planned", "Growing", "Harvested", "Abandoned"
+  status                  Cropstatus          @unique//e.g., "Planned", "Growing", "Harvested", "Abandoned"
   yieldAmount             Float?
   yieldUnit               String?
   notes                   Notes[]
@@ -108,12 +107,19 @@ model Crop {
   Task                    Task[]                
 }
 
+enum Cropstatus {
+  PLLANED 
+  GROWING 
+  HARVESTED 
+  ABANDONED
+}
+
 
 model  CropGrowthStage {
   id                      String            @id @default(uuid())
   cropId                  String            @unique
   crop                    Crop              @relation(fields: [cropId], references: [id])
-  stageName               String            //e.g., "Germination", "Flowering", "Fruting"
+  stageName               Stages            @unique//e.g., "Germination", "Flowering", "Fruting"
   dateObserved            DateTime          @db.Date
   notes                   Notes[]
   createdAt               DateTime          @default(now())
@@ -121,11 +127,18 @@ model  CropGrowthStage {
 }
 
 
+enum Stages {
+  GERMINATION 
+  FLOWERING
+  FRUTING
+}
+
+
 model Activites {
   id                     String                 @id @default(uuid())
   userId                 String
   user                   User                   @relation(fields: [userId], references: [id])
-  Activity_type          String                 //e.g., "Sowing", "Fertilization", "Harvesting", "Irrigation", "Pest Control"  
+  Activity_type          ActivityType           @unique   //e.g., "Sowing", "Fertilization", "Harvesting", "Irrigation", "Pest Control"  
   startDate              DateTime               @db.Date
   description            String?
   quantity               Float?
@@ -141,16 +154,24 @@ model Activites {
   field                  Field?             @relation(fields: [fieldId], references: [id])              
 }
 
+enum ActivityType {
+  SOWING
+  FERTILIZATION
+  HARVESTING
+  IRRIGATION
+  PESTCONTROL
+}
+
 
 model Task {
   id                     String             @id @default(uuid())
   userId                 String
   user                   User               @relation(fields: [userId], references: [id])
-  title                  String
+  title                  String             @unique
   description            String?
   dueDate                DateTime?          @db.Date
-  status                 String             @default("Pending") //e.g., "Pending", "In Progress", "Completed", "Overdue"
-  priority               String?            //e.g., "High", "Medium", "Low"
+  status                 TaskStatus         @unique //e.g., "Pending", "In Progress", "Completed", "Overdue"
+  priority               Priority           @unique //e.g., "High", "Medium", "Low"
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
 
@@ -160,6 +181,18 @@ model Task {
   field                  Field?             @relation(fields: [fieldId], references: [id])
 }
 
+enum TaskStatus {
+  PENDING
+  INPROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum Priority {
+  HIGH
+  MEDIUM
+  LOW
+}
 
 model Expenses {
   id                     String             @id @default(uuid())

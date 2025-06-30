@@ -6,6 +6,7 @@ export const authField = async(req, res, next) => {
 
         const fieldToken = req.headers['field-token']?.split(' ')[1]; 
 
+
         if(fieldToken === null){
             return res.status(401).json({message: 'fieldToken is not autherized'})
         }

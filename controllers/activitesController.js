@@ -56,7 +56,7 @@ export const newActivity = async(req, res) => {
             res.status(400).json({message: 'crop data not found, invalid cropid'})
         }
 
-        const { Activity_type,  description, quantity, unit, notes } = req.body; 
+        const { Activity_type,  description, quantity, unit, notes, startDate } = req.body; 
 
         if(!Activity_type  || !description || !quantity || !unit ){
             res.status(400).json({message: 'the given required to fill first'})
@@ -69,9 +69,8 @@ export const newActivity = async(req, res) => {
                 }
             }): []
         
-        const date = new Date(); 
 
-        const newDate = date.setDate(date.getDate()); 
+        const newDate = new Date(startDate) 
 
         const newActivity = await client.activites.create({
             data: {
@@ -80,7 +79,9 @@ export const newActivity = async(req, res) => {
                 description, 
                 quantity, 
                 unit, 
-                notes: Notes, 
+                notes: {
+                    create: Notes
+                }, 
                 user: {
                     connect: {
                         id: user.id
@@ -101,7 +102,7 @@ export const newActivity = async(req, res) => {
 
         const token = jwt.sign({id: newActivity.id}, process.env.JWT_SECRECT)
 
-        res.status(200).json({token, newActivity,  message: 'new activity has been created successfully!'})
+        res.status(201).json({token, newActivity,  message: 'new activity has been created successfully!'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -163,7 +164,7 @@ export const GetAllActivites = async(req, res) => {
             res.status(400).json({message: 'crop data not found, invalid cropid'})
         }
 
-        const GetAllActivites = await client.activites.findUnique({
+        const GetAllActivites = await client.activites.findMany({
             where: {
                 userId: user.id,
                 fieldId: field.id, 
@@ -338,15 +339,14 @@ export const UpdateActivity = async(req, res) => {
             res.status(400).json({message: 'Activity data not found, invalid acitiviyid'})
         }
 
-        const {Activity_type, description, quantity, unit, notes} = req.body
+        const {Activity_type, description, quantity, unit, notes, startDate} = req.body
 
         if(!Activity_type || !description || !quantity || !unit){
             res.status(400).json({message: 'fill the required data first'})
         }
 
-        const date = new Date(); 
 
-        const startDate = date.setDate(date.getDate())
+        const StartDate = new Date(startDate)
 
         const Notes = Array.isArray(notes)
             ? notes.map((note) => {
@@ -365,10 +365,12 @@ export const UpdateActivity = async(req, res) => {
             }, data: {
                 Activity_type, 
                 description, 
-                startDate: startDate, 
+                startDate: StartDate, 
                 quantity, 
                 unit,
-                notes: Notes
+                notes:{
+                    create: Notes
+                }
             }
         })
 
@@ -391,7 +393,7 @@ export const deleteActivity = async(req, res) => {
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const activityId = req.params; 
+        const {activityId} = req.params; 
 
         if(!userId || !fieldId || !cropId || !activityId){
             res.status(400).json({message: 'userId and fieldId and cropId is required'})
@@ -496,7 +498,7 @@ export const getAllLoggedActivites = async(req, res) => {
             res.status(400).json({message: 'user not found, invalid userId'})
         }
 
-        const allloggedActivites = await client.activites.findUnique({
+        const allloggedActivites = await client.activites.findMany({
             where: {
                 userId: user.id
             }

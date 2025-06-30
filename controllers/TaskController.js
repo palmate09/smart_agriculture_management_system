@@ -1,5 +1,6 @@
 import client from '../config/database.js'
 import jwt from 'jsonwebtoken'
+import { Priority, TaskStatus } from '../generated/prisma/index.js'
 
 
 // creating the new Task associated to the particular crop which associated to the particular field and which associated to the paritcular user/farmer
@@ -49,23 +50,29 @@ export const newTask = async(req, res) => {
         }
 
         
-        const { title, description, status, priority } = req.body; 
+        const { title, description, status, priority, dueDate } = req.body; 
 
         if(!title || !description || !status || !priority){
             res.status(400).json({message: 'all these data required to fill first'})
         }
 
-        const date = new Date(); 
+        if(!Object.values(TaskStatus).includes(status)){
+            res.status(400).json({message: 'Invalid task status provided'})
+        }
 
-        const dueDate = date.setDate(date.getDate() + 20)
+        if(!Object.values(Priority).includes(priority)){
+            res.status(400).json({message: 'Invalid priority data provided'})
+        }
+
+        const DueDate = new Date(dueDate)
 
         const newTask = await client.task.create({
             data: {
                 title, 
                 description, 
-                status, 
-                priority, 
-                dueDate: dueDate, 
+                status: status, 
+                priority: priority, 
+                dueDate: DueDate, 
                 user: {
                     connect: {
                         id: user.id
@@ -90,7 +97,7 @@ export const newTask = async(req, res) => {
             res.status(400).json({message: 'token not found, or invalid Task id '})
         }
 
-        res.status(200).json({token, message: 'new task has been created successfully!'})
+        res.status(201).json({token, message: 'new task has been created successfully!'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -113,6 +120,9 @@ export const getAllTasks = async(req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -124,6 +134,9 @@ export const getAllTasks = async(req, res) => {
             where: {
                 userId: user.id, 
                 id: fieldId
+            },
+            select: {
+                id: true
             }
         })
 
@@ -136,6 +149,9 @@ export const getAllTasks = async(req, res) => {
                 userId: user.id, 
                 fieldId: field.id, 
                 id: cropId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -143,13 +159,15 @@ export const getAllTasks = async(req, res) => {
             res.status(400).json({message: 'crop not found, invalid cropId'})
         }
 
-        const getAllTasks = await client.task.findUnique({
+
+        const getAllTasks = await client.task.findMany({
             where: {
                 userId: user.id, 
                 fieldId: field.id, 
                 cropId: crop.id
             }
         })
+
 
         if(!getAllTasks){
             res.status(400).json({message: 'all tasks are not found'})
@@ -235,7 +253,7 @@ export const getParticularTask = async(req, res) => {
             res.status(400).json({message: 'particular task has not been received'})
         }
 
-        req.status(200).json({getParticularTask, message: 'particular task has been received successfully!'})
+        res.status(200).json({getParticularTask, message: 'particular task has been received successfully!'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -302,10 +320,9 @@ export const updateTask = async(req, res) => {
             res.status(400).json({message: 'taks not found, invalid taskid'})
         }
 
-        const { description, status, priority } = req.body;
+        const { description, status, priority, dueDate } = req.body;
         
-        const date = new Date(); 
-        const updatedDate = date.setDate(date.getDate() + 5);  
+        const updatedDate = new Date(dueDate);  
 
         const updatedTask = await client.task.update({
             where: {
@@ -442,6 +459,9 @@ export const getallLoggedTasks = async(req, res) => {
         const user  = await client.user.findFirst({
             where: {
                 id: userId
+            },
+            select: {
+                id: true
             }
         })
 
