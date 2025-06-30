@@ -6,9 +6,9 @@ const router = express.Router();
 
 router.post('/fields/new_field',authUser, createField); 
 router.get('/fields/get_all_fields', authUser, getallField); 
-router.get('/fields/get_particular/field', authUser, authField, getParticularField)
+router.get('/fields/get_particular_field', authUser, authField, getParticularField)
 router.put('/fields/update_field', authUser, authField, updateField)
-router.delete('/fields/delete_field', authUser, authField, deleteField); 
+router.delete('/fields/delete_field/:fieldId', authUser, authField, deleteField); 
 
 
 export default router; 

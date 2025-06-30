@@ -4,15 +4,14 @@ export const authField = async(req, res, next) => {
 
     try{
 
-        const authHeader = req.headers['authorization']; 
+        const fieldToken = req.headers['field-token']?.split(' ')[1]; 
 
-        const token = authHeader && authHeader.split(' ')[1]; 
-
-        if(token === null){
-            return res.status(401).json({message: 'Token is not autherized'})
+        if(fieldToken === null){
+            return res.status(401).json({message: 'fieldToken is not autherized'})
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRECT); 
+
+        const decoded = jwt.verify(fieldToken, process.env.JWT_SECRECT); 
 
         if(!decoded){
             return res.status(404).json({message: 'Invalid token'})

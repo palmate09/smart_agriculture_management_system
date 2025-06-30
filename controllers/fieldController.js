@@ -13,13 +13,17 @@ export const createField = async(req, res) => {
         if(!userId){
             res.status(400).json({message: 'User not found so fill the userId correctly'})
             return
-        }
+        } 
 
-        const user = await client.user.findUnique({
+        const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
+
 
         if( !user ){
             res.status(400).json({message: 'User not found , invalid UserId'})
@@ -45,7 +49,9 @@ export const createField = async(req, res) => {
                 area, 
                 unit, 
                 location, 
-                notes: notesData, 
+                notes: {
+                    create: notesData
+                }, 
                 user: {
                     connect: {id: user.id}
                 }
@@ -61,7 +67,7 @@ export const createField = async(req, res) => {
     }
 }
 
-// all filed of particular user/farmer
+// all fields of particular user/farmer
 export const getallField = async(req, res) => {
 
     try{
@@ -75,6 +81,9 @@ export const getallField = async(req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -82,11 +91,18 @@ export const getallField = async(req, res) => {
             res.status(400).json({message: 'user not found, Invalid userid'})
         }
 
-        const allFiledDetails = await client.field.findUnique({
+        const allFiledDetails = await client.user.findUnique({
             where: {
-                userId: user.id
+                id: user.id
+            }, 
+            select: {
+                fields: true
             }
         })
+
+        if(!allFiledDetails){
+            res.status(400).json({message: 'all field details have not been received yet'})
+        }
 
         res.status(200).json({allFiledDetails, message: 'all field details'})
     }
@@ -102,7 +118,7 @@ export const getParticularField = async(req, res) => {
     try{
 
         const userId = req.user.id;
-        const {fieldId} = req.params; 
+        const fieldId = req.field.id;
         
         if( !userId ){
             res.status(400).json({message: 'fill the userId first'})
@@ -111,6 +127,9 @@ export const getParticularField = async(req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -122,24 +141,29 @@ export const getParticularField = async(req, res) => {
             res.status(400).json({message: 'fill the fieldId first '})
         }
 
-        const filed = await client.field.findFirst({
-            where: {
+        const field = await client.field.findFirst({
+            where: { 
+                userId: user.id, 
                 id: fieldId
+            },
+            select: {
+                id: true
             }
         })
 
-        if(!filed){
+
+        if(!field){
             res.status(400).json({message: 'field not found, invalid fieldid '})
         }
 
         const particularFieldData = await client.field.findUnique({
             where: {
                 userId: user.id,
-                id: fieldId
+                id: field.id
             }
         })
 
-        res.status(200).json({particularFieldData, message: 'particular filed data is received'})
+        res.status(200).json({ particularFieldData, message: 'particular filed data is received'})
     }
     catch(e){
         res.status(500).json({error: e.message, message:'Internal server Error'})
@@ -152,7 +176,7 @@ export const updateField = async (req, res) => {
     try{
 
         const userId = req.user.id; 
-        const {fieldId} = req.params; 
+        const fieldId = req.field.id; 
 
         if(!userId ){
             res.status(400).json({message: 'User id is required'})
@@ -161,6 +185,9 @@ export const updateField = async (req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -174,7 +201,11 @@ export const updateField = async (req, res) => {
 
         const field = await client.field.findFirst({
             where: {
+                userId: user.id, 
                 id: fieldId
+            },
+            select: {
+                id: true
             }
         })
 
@@ -205,13 +236,15 @@ export const updateField = async (req, res) => {
             }, 
             data: {
                 location, 
-                notes: notesData, 
+                notes: {
+                    create: notesData
+                }, 
                 area, 
                 unit
             }
         })
 
-        res.status(201).json({updatedData, message: 'field data has been updated successfully!'})
+        res.status(200).json({ updatedData, message: 'field data has been updated successfully!'})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -233,6 +266,9 @@ export const deleteField = async(req, res) => {
         const user = await client.user.findFirst({
             where: {
                 id: userId
+            }, 
+            select: {
+                id: true
             }
         })
 
@@ -244,12 +280,20 @@ export const deleteField = async(req, res) => {
             res.status(400).json({message: 'field id is required'})
         }
 
+        console.log(fieldId)
+        console.log(userId)
+
         const field = await client.field.findFirst({
             where: {
+                userId: user.id, 
                 id: fieldId
+            },
+            select: {
+                id: true
             }
         })
 
+        console.log(field)
         if(!field){
             res.status(400).json({message: 'filed not found, invalid fieldid'})
         }
