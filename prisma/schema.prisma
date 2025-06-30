@@ -201,9 +201,9 @@ model Expenses {
   amount                 Float
   currency               String
   date                   DateTime           @db.Date
-  category               ExpenseDetailType             //e.g., "Seeds", "Fertilizers", "Labor", "Fuel"
+  category               ExpenseDetailType  @unique             //e.g., "Seeds", "Fertilizers", "Labor", "Fuel"
   description            String?
-  paymentMethod          String?            //e.g., "Cash", "Bank Transfer"
+  paymentMethod          Method             @unique//e.g., "Cash", "Bank Transfer"
   vendor                 String?
   receiptNumber          String?
   notes                  Notes[]
@@ -219,6 +219,10 @@ model Expenses {
   details                ExpenseDetail?
 }
 
+enum Method {
+  CASH
+  BANKTRANSFER
+}
 
 enum ExpenseDetailType {
   SEEDS
