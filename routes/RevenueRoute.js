@@ -8,7 +8,7 @@ const router = express.Router();
 
 
 router.post('/revenues/new_revenue', authUser, authField, authCrop, newRevenue);
-router.get('/revenues/get_allRevenues', authUser, authField, authCrop, getAllRevenues); 
+router.get('/revenues/get_allRevenues', authUser, authField, authCrop, authRevenue, getAllRevenues); 
 router.get('/revenues/get_particular_Revenue', authUser, authField, authCrop, authRevenue, getParticularRevenue); 
 router.put('/revenues/updated_Revenue', authUser, authField, authCrop, authRevenue, updateRevenue)
 router.delete('/revenues/delete_revenue', authUser, authField, authCrop, authRevenue, deleteRevenue)

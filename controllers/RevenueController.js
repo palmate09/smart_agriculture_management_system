@@ -57,7 +57,7 @@ export const newRevenue = async(req, res) => {
             res.status(400).json({message: 'crop not found, invalid cropId'})
         }
 
-        const { amount, currency , source, description, notes } = req.body;
+        const { amount, currency , source, description, notes, date } = req.body;
         
         if(!amount || !currency || !source || !description ){
             res.status(400).json({message: 'all these are required to fill first'})
@@ -74,9 +74,8 @@ export const newRevenue = async(req, res) => {
             res.status(400).json({message: 'Invalid revenue source received'})
         }
 
-        const date = new Date(); 
 
-        const newdate = date.setDate(date.getDate());
+        const newdate = new Date(date)
 
         const newRevenue = await client.revenues.create({
             data: {
@@ -85,18 +84,20 @@ export const newRevenue = async(req, res) => {
                 date: newdate, 
                 source: source, 
                 description, 
-                notes: Notes, 
+                notes: {
+                    create: Notes
+                }, 
                 user: {
                     connect : {
                         id: user.id
                     }
                 }, 
-                Crop: {
-                    connect: {
-                        id: crop.id
-                    }
-                }, 
                 Field: {
+                    connect: {
+                        id: field.id
+                    }
+                },
+                Crop: {
                     connect: {
                         id: crop.id
                     }
@@ -176,7 +177,7 @@ export const getAllRevenues = async(req, res) => {
             res.status(400).json({message: 'crop not found, invalid cropId'})
         }
 
-        const getAllRevenues = await client.revenues.findUnique({
+        const getAllRevenues = await client.revenues.findMany({
             where: {
                 userId: user.id, 
                 fieldId: field.id, 
@@ -359,7 +360,7 @@ export const updateRevenue = async(req, res) => {
             res.status(400).json({message: 'revenue not found, invalid revenueId'})
         }
 
-        const { amount, currency, source, description, notes } = req.body;
+        const { amount, currency, source, description, notes, date } = req.body;
         
         if(!amount || !currency || !source || !description ){
             res.status(400).json({message: 'all this data is required to fill first'})
@@ -376,9 +377,7 @@ export const updateRevenue = async(req, res) => {
             res.status(400).json({message: 'Invalid revenue source provided'})
         }
 
-        const date = new Date()
-
-        const newDate = date.setDate(date.getDate())
+        const newDate = new Date(date)
 
         const updatedRevenue = await client.revenues.update({
             where: {
@@ -393,7 +392,9 @@ export const updateRevenue = async(req, res) => {
                 date: newDate, 
                 source: source, 
                 description, 
-                notes: Notes
+                notes: {
+                    create: Notes
+                }
             }
         })
 

@@ -244,7 +244,7 @@ model ExpenseDetail {
   id               String         @id @default(uuid())
   expenseId        String         @unique
   expense          Expenses       @relation(fields: [expenseId], references: [id])
-  type             ExpenseDetailType
+  type             ExpenseDetailType  @unique
   detailsJson      Json
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -258,7 +258,7 @@ model Revenues {
   amount            Float
   currency          String
   date              DateTime        @db.Date
-  source            SourceRevenue          //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
+  source            SourceRevenue   @unique      //e.g., "Crop Sale", "Subsidy", "Livestock Sale"
   description       String?
   notes             Notes[]
   createdAt         DateTime        @default(now())

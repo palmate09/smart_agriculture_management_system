@@ -1,6 +1,6 @@
 import client from '../config/database.js'
 import jwt from 'jsonwebtoken'
-import { ExpenseDetailType } from '../generated/prisma/index.js';
+import { ExpenseDetailType, Method } from '../generated/prisma/index.js';
 
 // create the new Expense associated to the particular crop and which associated to the particular field and which associated to the particular user/farmer
 export const newExpense = async(req, res) => {
@@ -57,7 +57,7 @@ export const newExpense = async(req, res) => {
             res.status(400).json({message: 'crop not found invalid crop'})
         }
 
-        const { amount, currency, notes, category, description, paymentMethod, vendor, receiptNumber } = req.body; 
+        const { amount, currency, notes, category, description, paymentMethod, vendor, receiptNumber, date } = req.body; 
 
         if(!amount || !currency || !category || !description || !paymentMethod || !vendor || !receiptNumber){
             res.status(400).json({message: 'all these field are required to fill first'})
@@ -67,9 +67,11 @@ export const newExpense = async(req, res) => {
             res.status(400).json({message: 'Invalid Expense category provided'})
         }
 
-        const date = new Date(); 
+        if(!Object.values(Method).includes(paymentMethod)){
+            res.status(400).json({message: 'Invalid payment method provided'})
+        }
 
-        const newDate = date.setDate(date.getDate())
+        const newDate = new Date(date)
 
         const Notes = Array.isArray(notes)
             ? notes.map((note) => {
@@ -82,11 +84,13 @@ export const newExpense = async(req, res) => {
             data: {
                 amount, 
                 currency, 
-                notes: Notes, 
+                notes: {
+                    create: Notes
+                }, 
                 category: category, 
                 date: newDate, 
                 description, 
-                paymentMethod, 
+                paymentMethod: paymentMethod, 
                 vendor, 
                 receiptNumber, 
                 user: {
@@ -112,6 +116,10 @@ export const newExpense = async(req, res) => {
         }
 
         const token = jwt.sign({id: newExpense.id}, process.env.JWT_SECRECT) 
+
+        if(!token){
+            res.status(400).json({message: 'token has not generated yet'})
+        }
 
         res.status(200).json({token, message: 'the new expense has been created successfully!'})
     }
@@ -175,7 +183,7 @@ export const getAllExpenses = async(req, res) => {
             res.status(400).json({message: 'crop not found invalid crop'})
         }
 
-        const getAllExpenses = await client.expenses.findUnique({
+        const getAllExpenses = await client.expenses.findMany({
             where: {
                 userId: user.id, 
                 fieldId: field.id, 
@@ -362,18 +370,24 @@ export const updateExpense = async(req, res) => {
             res.status(400).json({message: 'Expense details not found, Invalid ExpenseId '})
         }
 
-        const { amount, currency, category, description } = req.body; 
+        const { amount, currency, category, description, notes, date } = req.body; 
 
         if(!amount || !currency || !category || !description){
             res.status(400).json({message: 'these data are required to fill first'})
         }
 
-        const date = new Date() 
-        const newdate = date.setDate(date.getDate()); 
+        const newdate = new Date(date);  
 
         if(!Object.values(ExpenseDetailType).includes(category)){
             res.status(400).json({message: 'Invalid Expense Category provided'})
         }
+
+        const Notes = Array.isArray(notes)
+            ? notes.map((note) => {
+                if(note?.description){
+                    description: note?.description
+                }
+            }) : []
 
         const updatedExpense = await client.expenses.update({
             where: {
@@ -385,9 +399,13 @@ export const updateExpense = async(req, res) => {
             data: {
                 amount, 
                 currency, 
+                date: newdate, 
                 category: category, 
                 description, 
-                date: newdate, 
+                date: newdate,
+                notes: {
+                    create: Notes
+                },
                 user: {
                     connect: {
                         id: user.id
@@ -517,7 +535,7 @@ export const addExpenseDetails = async(req, res ) => {
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const ExpenseId = req.crop.id; 
+        const ExpenseId = req.Expense.id; 
 
         if(!userId || !fieldId || !cropId || !ExpenseId){
             res.status(400).json({message: 'userId and fieldId and cropId and ExpenseId are required '})
@@ -622,7 +640,7 @@ export const getExpenseDetails = async(req, res ) => {
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const ExpenseId = req.crop.id; 
+        const ExpenseId = req.Expense.id; 
 
         if(!userId || !fieldId || !cropId || !ExpenseId){
             res.status(400).json({message: 'userId and fieldId and cropId and ExpenseId are required '})
@@ -711,7 +729,7 @@ export const updateExpenseDetails = async(req, res) => {
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const ExpenseId = req.crop.id; 
+        const ExpenseId = req.Expense.id; 
 
         if(!userId || !fieldId || !cropId || !ExpenseId){
             res.status(400).json({message: 'userId and fieldId and cropId and ExpenseId are required '})
@@ -819,7 +837,7 @@ export const deleteExpenseDetails = async(req, res) => {
         const userId = req.user.id; 
         const fieldId = req.field.id; 
         const cropId = req.crop.id; 
-        const ExpenseId = req.crop.id; 
+        const ExpenseId = req.Expense.id; 
 
         if(!userId || !fieldId || !cropId || !ExpenseId){
             res.status(400).json({message: 'userId and fieldId and cropId and ExpenseId are required '})
@@ -878,6 +896,7 @@ export const deleteExpenseDetails = async(req, res) => {
                 id: true
             }
         })
+
 
         if(!Expense){
             res.status(400).json({message: 'Expense data not found, invalid ExpenseId'})
