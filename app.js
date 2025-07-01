@@ -7,6 +7,8 @@ import activityRouter from './routes/activityRoute.js'
 import taskRouter from './routes/taskRoute.js'
 import expenseRouter from './routes/ExpenseRoute.js'
 import revenueRouter from './routes/RevenueRoute.js'
+import financialReportRouter from './routes/financialReportRoute.js'
+import dashboardRouter from './routes/dashboardRoute.js'
 dotenv.config(); 
 
 const app = express(); 
@@ -21,6 +23,8 @@ app.use('/api', activityRouter);
 app.use('/api', taskRouter);
 app.use('/api', expenseRouter); 
 app.use('/api', revenueRouter)
+app.use('/api', financialReportRouter); 
+app.use('/api', dashboardRouter)
 
 app.listen(process.env.PORT || 8080)
 
