@@ -22,8 +22,8 @@ export const dashboard_summery = async(req, res) => {
 
         const activeCropCount = summery
             .filter(item => item.status !== 'ABANDONED')
+            .slice(0,4)
             .reduce((acc, curr) => acc + curr._count.id, 0)
-
         
         const tasks = await client.task.findMany({
             where: {
@@ -34,7 +34,8 @@ export const dashboard_summery = async(req, res) => {
                 title: true,  
                 dueDate: true,
                 status: true
-            }
+            }, 
+            take: 4
         })
 
         const customOrder = ['INPROGRESS', 'OVERDUE', 'PENDING']
@@ -45,9 +46,7 @@ export const dashboard_summery = async(req, res) => {
         
         const upcomingTasks = sortedupcomingTasks[0]
 
-        while( upcomingTasks.length <= 4 ){
-            res.status(200).json({ activeCropCount, upcomingTasks })
-        }
+        res.status(200).json({ activeCropCount, upcomingTasks })
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -71,7 +70,8 @@ export const crop_Growth_overview = async(req, res) => {
                 id: true, 
                 name: true, 
                 status: true
-            }
+            },
+            take: 4
         })
 
         const ans = crops.filter((item) => item.status !== 'ABANDONED')
@@ -85,11 +85,9 @@ export const crop_Growth_overview = async(req, res) => {
             by: ['stageName']
         })
 
-        const cropGrowthStage = result[0].stageName
+        const cropGrowthStage = result[0].stageName; 
 
-        while(ActiveCrop.length && cropGrowthStage.length <= 4){
-            res.status(200).json({ActiveCrop, cropGrowthStage})
-        }
+        res.status(200).json({ActiveCrop, cropGrowthStage})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -114,12 +112,11 @@ export const Task_overview = async(req, res) => {
                 id: true, 
                 title: true,
                 status: true 
-            }
+            },
+            take: 4
         })
 
-        while(taskOverview.length <= 4){
-            res.status(200).json({ taskOverview })
-        }
+        res.status(200).json({ taskOverview })
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -145,12 +142,11 @@ export const activity_overview = async(req, res) => {
                 Activity_type: true, 
                 startDate: true, 
                 cropId: true
-            }
+            }, 
+            take: 4
         })
 
-        while(activityOverview.length <= 4){
-            res.status(200).json({activityOverview})
-        }
+        res.status(200).json({activityOverview})
     }   
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
@@ -177,7 +173,8 @@ export const Financial_overview = async(req, res) => {
                 currency: true, 
                 date: true, 
                 category: true
-            }
+            }, 
+            take: 4
         })
 
         const revenue = await client.revenues.findMany({
@@ -190,12 +187,11 @@ export const Financial_overview = async(req, res) => {
                 currency: true, 
                 date: true,
                 source: true
-            }
+            }, 
+            take: 4
         })
 
-        while(expenses.length && revenue.length <= 4){
-            res.status(200).json({expenses, revenue})
-        }
+        res.status(200).json({expenses, revenue})
     }
     catch(e){
         res.status(500).json({error: e.message, message: 'Internal server Error'})
